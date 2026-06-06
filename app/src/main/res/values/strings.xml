@@ -1,0 +1,137 @@
+<resources>
+    <string name="app_name">ShortVideoGuard</string>
+
+    <string name="main_title">ShortVideoGuard Demo</string>
+    <string name="main_desc">展示APP核心运作逻辑</string>
+    <string name="overlay_permission_tip">需开启悬浮窗权限后，方可在其他应用上层显示检测悬浮球</string>
+    <string name="grant_overlay_permission">开启悬浮窗权限</string>
+    <string name="overlay_permission_granted">已获取悬浮窗权限</string>
+    <string name="history_records">历史检测记录</string>
+    <string name="overlay_ready">悬浮球已启动，可切换到其他应用查看</string>
+    <string name="overlay_not_ready">未获得悬浮窗权限</string>
+    <string name="history_placeholder">演示版暂不提供历史记录</string>
+    <string name="history_title">历史检测记录</string>
+    <string name="history_empty">暂无检测记录</string>
+    <string name="history_load_failed">加载失败</string>
+    <string name="retry">重试</string>
+    <string name="back">返回</string>
+    <string name="risk_high_label">高风险</string>
+    <string name="risk_medium_label">中风险</string>
+    <string name="risk_safe_label">安全</string>
+    <string name="score_format">%.0f分</string>
+
+    <string name="permission_explain_title">权限说明</string>
+    <string name="permission_explain_message">悬浮窗权限仅用于在短视频APP上层显示检测悬浮球，不会收集您的任何个人信息</string>
+    <string name="go_grant">去授权</string>
+    <string name="cancel">取消</string>
+
+    <string name="panel_title">ShortVideoGuard</string>
+    <string name="author_id_hint">发布者ID（必填）</string>
+    <string name="author_id_prefs">author_id_prefs</string>
+    <string name="key_author_id">author_id</string>
+    <string name="panel_detect">检测</string>
+    <string name="panel_settings">设置</string>
+    <string name="settings_placeholder">设置功能开发中</string>
+    <string name="record_permission_missing">无法开启录屏，请先授予录屏权限</string>
+    <string name="record_saved">录屏已保存到系统视频目录</string>
+    <string name="record_failed">录屏失败，请重试</string>
+    <string name="uploading_analyze">视频已上传，正在获取分析结果...</string>
+    <string name="analyze_request_failed">分析请求失败，请稍后重试</string>
+    <string name="analyze_parse_failed">返回结果解析失败</string>
+    <string name="recording_notification_title">ShortVideoGuard 正在录制</string>
+    <string name="recording_notification_text">检测中，正在录制屏幕画面</string>
+    <string name="recording_channel_name">屏幕录制</string>
+    <string name="start_check">开始鉴定</string>
+    <string name="checking">检测中...</string>
+    <string name="countdown_format">倒计时 %1$ds</string>
+
+    <string name="checking_banner_text">风险检测中</string>
+    <string name="safe_banner_text">检测正常 | 无风险</string>
+    <string name="risk_banner_level_format">风险等级：%1$s</string>
+    <string name="banner_more_desc">查看详细检测结果</string>
+    <string name="banner_countdown">%1$ds</string>
+    <string name="banner_countdown_default">5s</string>
+    <string name="mid_risk_text">中等风险提醒 | 请注意内容安全</string>
+
+    <string name="high_risk_title">高风险警告</string>
+    <string name="high_risk_message">当前内容检测出高风险，存在安全隐患，请谨慎观看</string>
+    <string name="high_risk_sub_message">建议立即退出该视频页面，避免继续接触疑似诈骗内容。</string>
+    <string name="exit_now">立即退出</string>
+    <string name="continue_watch">继续观看</string>
+
+    <string name="result_done">检测完成</string>
+    <string name="result_status_format">检测完成 | 状态：%1$s</string>
+    <string name="result_level_format">风险等级：%1$s</string>
+    <string name="result_risk_score_format">• 风险评分：%1$s</string>
+    <string name="result_ai_glitch_format">• AI 伪造概率：%1$s</string>
+    <string name="result_violence_format">• 暴力概率：%1$s</string>
+    <string name="result_trigger_format">• 触发规则：%1$s</string>
+    <string name="result_transcript_format">• 文本片段：%1$s（推理耗时 %2$s ms）</string>
+    <string name="result_transcript_default">• 文本片段：-</string>
+    <string name="result_reason_format">• 判断依据：%1$s</string>
+    <string name="result_source_format">• 黑名单来源：%1$s</string>
+    <string name="result_transcription_format">• 文本片段：%1$s</string>
+    <string name="author_id_required">请输入发布者ID</string>
+    <string name="emergency_phone_hint">紧急联系人手机号</string>
+    <string name="emergency_phone_helper">高危检测时将自动发送短信通知该号码</string>
+    <string name="tts_warning">警告！检测到高风险内容，已通知紧急联系人，请注意安全！</string>
+    <string name="sms_warning">【ShortVideoGuard紧急提醒】您关注的联系人正在浏览的内容被检测为高风险，可能存在诈骗风险，请尽快确认其安全。</string>
+    <string name="sms_sent">已发送短信通知紧急联系人</string>
+    <string name="sms_permission_granted">短信权限已授予</string>
+    <string name="sms_permission_required">发送短信需要短信权限</string>
+    <string name="emergency_phone_prefs">emergency_phone_prefs</string>
+    <string name="key_emergency_phone">emergency_phone</string>
+    <string name="settings_title">设置</string>
+    <string name="settings_emergency_section">紧急联系人</string>
+    <string name="settings_notification_section">高危通知</string>
+    <string name="settings_sms_toggle">短信通知</string>
+    <string name="settings_sms_desc">检测到高危内容时自动发送短信通知紧急联系人</string>
+    <string name="settings_tts_toggle">语音朗读警告</string>
+    <string name="settings_tts_desc">检测到高危内容时自动朗读警告信息</string>
+    <string name="key_settings_prefs">app_settings</string>
+    <string name="key_sms_enabled">sms_enabled</string>
+    <string name="key_tts_enabled">tts_enabled</string>
+    <string name="key_floating_enabled">floating_enabled</string>
+    <string name="key_api_base_url">api_base_url</string>
+    <string name="key_api_key">api_key</string>
+    <string name="key_mobile_data_enabled">mobile_data_enabled</string>
+    <string name="settings_floating_section">悬浮球</string>
+    <string name="settings_floating_toggle">悬浮球开关</string>
+    <string name="settings_floating_desc">关闭后悬浮球将隐藏，不再进行检测</string>
+    <string name="settings_network_section">网络与接口</string>
+    <string name="settings_api_url_hint">后端API地址</string>
+    <string name="settings_api_url_helper">检测和历史查询使用的后端地址，修改后即时生效</string>
+    <string name="settings_api_key_hint">API Key</string>
+    <string name="settings_api_key_helper">与服务端配置的 api.key 保持一致，所有业务请求携带此密钥</string>
+    <string name="settings_mobile_data_toggle">允许使用移动数据</string>
+    <string name="settings_mobile_data_desc">关闭后仅在WiFi环境下上传视频进行检测</string>
+    <string name="api_url_default">http://10.0.2.2:8080</string>
+    <string name="mobile_data_blocked">当前为移动网络，已禁止上传，可在设置中开启</string>
+
+    <!-- 上传通知 -->
+    <string name="uploading_notification_title">正在上传分析</string>
+    <string name="uploading_notification_text">正在上传视频并等待 AI 分析结果…</string>
+    <string name="upload_channel_name">视频上传</string>
+
+    <!-- 上传状态与错误 -->
+    <string name="upload_progress_banner">正在上传分析中…</string>
+    <string name="upload_auth_failed">认证失败，请在设置中检查 API Key</string>
+    <string name="upload_bad_request">请求参数错误或视频过大（不超过10MB）</string>
+    <string name="upload_ai_busy">AI 分析服务繁忙，正在等待后重试</string>
+    <string name="upload_rate_limited">请求过于频繁，正在等待后重试</string>
+    <string name="upload_retry_toast">上传失败，正在第 %1$d 次重试</string>
+    <string name="upload_retry_exhausted">网络错误，已重试 %1$d 次，请稍后重试</string>
+    <string name="upload_retry_on_start">正在重试上次失败的上传…</string>
+    <string name="result_level_high">风险等级：高风险</string>
+    <string name="result_risk_1">• 拉人头</string>
+    <string name="result_risk_2">• 收益分成</string>
+    <string name="result_risk_3">• 快速致富</string>
+    <string name="result_risk_4">• 保健品</string>
+    <string name="again_check">再次检测</string>
+    <string name="close">关闭</string>
+
+    <string name="dev_info_title">开发者信息与网络状态</string>
+    <string name="dev_info_ok">确定</string>
+    <string name="dev_info_no_more">不再提示</string>
+    <string name="dev_info_disabled">已关闭启动提示，可在设置中重新开启</string>
+</resources>

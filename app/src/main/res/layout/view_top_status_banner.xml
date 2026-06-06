@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="36dp"
+    android:background="@drawable/bg_top_banner_checking"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="16dp"
+    android:paddingEnd="8dp">
+
+    <TextView
+        android:id="@+id/tvBannerTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxWidth="220dp"
+        android:text="@string/checking_banner_text"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvBannerCountdown"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="@string/banner_countdown_default"
+        android:textColor="@color/white"
+        android:textSize="14sp" />
+
+    <Button
+        android:id="@+id/btnBannerMore"
+        android:layout_width="32dp"
+        android:layout_height="28dp"
+        android:layout_marginStart="8dp"
+        android:backgroundTint="@android:color/transparent"
+        android:minWidth="0dp"
+        android:padding="0dp"
+        android:text="..."
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:contentDescription="@string/banner_more_desc"
+        android:visibility="gone" />
+
+</LinearLayout>

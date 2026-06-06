@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="brand_primary">#165DFF</color>
+    <color name="brand_primary_container">#E8F3FF</color>
+
+    <color name="risk_high">#F53F3F</color>
+    <color name="risk_mid">#FF7D00</color>
+    <color name="safe_green">#00B42A</color>
+
+    <color name="page_background">#F5F7FA</color>
+    <color name="surface_card">#FFFFFF</color>
+    <color name="secondary_button_bg">#F2F3F5</color>
+
+    <color name="text_primary">#1D2129</color>
+    <color name="text_secondary">#4E5969</color>
+    <color name="text_assist">#86909C</color>
+
+
+    <color name="overlay_mask_40">#66000000</color>
+    <color name="overlay_mask_60">#99000000</color>
+    <color name="ball_active">#CC165DFF</color>
+    <color name="ball_docked">#4D165DFF</color>
+
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>

@@ -56,6 +56,13 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
+    private final ActivityResultLauncher<String> audioPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                if (!granted) {
+                    Toast.makeText(this, R.string.audio_permission_denied, Toast.LENGTH_LONG).show();
+                }
+            });
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,6 +75,10 @@ public class MainActivity extends AppCompatActivity {
 
         if (checkSelfPermission(Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
             smsPermissionLauncher.launch(Manifest.permission.SEND_SMS);
+        }
+
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO);
         }
 
         permissionButton.setOnClickListener(v -> showPermissionExplainDialog());
@@ -85,19 +96,25 @@ public class MainActivity extends AppCompatActivity {
             showDevInfoDialogIfNeeded();
         }
 
+        // 启动后立即注册密钥和检测后端连通性
         registerApiKeyIfNeeded();
+        performHealthCheck();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         refreshOverlayStatusAndService();
+        // 从设置页面返回，用户可能刚改了 URL 或 API Key → 重新检测连通性
+        registerApiKeyIfNeeded();
+        performHealthCheck();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        mainHandler.removeCallbacksAndMessages(null);
+        // 注意：这里不清除所有回调，否则服务延迟启动会被取消
+        // 只清除健康检查和注册相关的回调
     }
 
     @Override
@@ -157,12 +174,16 @@ public class MainActivity extends AppCompatActivity {
         } catch (PackageManager.NameNotFoundException ignored) {
         }
 
+        SharedPreferences prefs = getSharedPreferences(
+                getString(R.string.key_settings_prefs), MODE_PRIVATE);
+        String baseUrl = prefs.getString(getString(R.string.key_api_base_url),
+                getString(R.string.api_url_default));
         return "应用: " + getString(R.string.app_name) + "\n"
                 + "版本: " + versionName + " (" + versionCode + ")\n"
                 + "包名: " + getPackageName() + "\n"
                 + "设备: " + Build.MANUFACTURER + " " + Build.MODEL + "\n"
                 + "系统: Android " + Build.VERSION.RELEASE + " (SDK " + Build.VERSION.SDK_INT + ")\n"
-                + "分析端点: http://localhost:2333/analyze";
+                + "分析端点: " + baseUrl;
     }
 
     private String buildNetInfo(NetworkSnapshot net) {
@@ -240,7 +261,6 @@ public class MainActivity extends AppCompatActivity {
                 if (canShowOverlay()) {
                     startService(new Intent(this, FloatingOverlayService.class));
                     overlayServiceRequested = true;
-                    performHealthCheck();
                 }
             }, SERVICE_START_DELAY_MS);
         } else {
@@ -290,6 +310,15 @@ public class MainActivity extends AppCompatActivity {
                         getString(R.string.key_settings_prefs), MODE_PRIVATE);
                 String baseUrl = prefs.getString(getString(R.string.key_api_base_url),
                         getString(R.string.api_url_default));
+
+                // 对 address 做基本校验
+                if (baseUrl.contains("10.0.2.2") || baseUrl.contains("localhost") || baseUrl.contains("127.0.0.1")) {
+                    Log.w("MainActivity", "Health check skipped: address " + baseUrl + " is emulator/localhost only");
+                    mainHandler.post(() -> Toast.makeText(this,
+                            "当前地址 " + baseUrl + " 仅限模拟器使用，请在设置中修改为电脑局域网 IP", Toast.LENGTH_LONG).show());
+                    return;
+                }
+
                 URL url = new URL(baseUrl + "/actuator/health");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setConnectTimeout(5000);
@@ -298,14 +327,23 @@ public class MainActivity extends AppCompatActivity {
                 conn.setUseCaches(false);
                 int code = conn.getResponseCode();
                 conn.disconnect();
-                if (code != 200) {
+                if (code == 200) {
+                    mainHandler.post(() -> Toast.makeText(this,
+                            "后端连接成功 ✓", Toast.LENGTH_SHORT).show());
+                } else {
+                    Log.w("MainActivity", "Health check failed: HTTP " + code + " for " + baseUrl);
                     mainHandler.post(() -> Toast.makeText(this,
                             "后端服务异常 (HTTP " + code + ")", Toast.LENGTH_SHORT).show());
                 }
             } catch (Exception e) {
-                Log.w("MainActivity", "Health check failed", e);
+                Log.w("MainActivity", "Health check failed for URL", e);
+                SharedPreferences prefs = getSharedPreferences(
+                        getString(R.string.key_settings_prefs), MODE_PRIVATE);
+                String baseUrl = prefs.getString(getString(R.string.key_api_base_url),
+                        getString(R.string.api_url_default));
+                final String displayUrl = baseUrl;
                 mainHandler.post(() -> Toast.makeText(this,
-                        "后端不可达，请检查网络和服务地址", Toast.LENGTH_SHORT).show());
+                        "❌ 后端不可达，当前地址: " + displayUrl + "，请在设置中修改为电脑局域网 IP", Toast.LENGTH_LONG).show());
             }
         }).start();
     }
@@ -315,13 +353,20 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         new Thread(() -> {
+            // Read current URL for error message
+            SharedPreferences prefs = getSharedPreferences(
+                    getString(R.string.key_settings_prefs), MODE_PRIVATE);
+            String currentUrl = prefs.getString(getString(R.string.key_api_base_url),
+                    getString(R.string.api_url_default));
+
             boolean ok = ApiKeyManager.ensureKeyRegistered(this);
             if (ok) {
                 mainHandler.post(() -> Toast.makeText(this,
                         R.string.key_register_success, Toast.LENGTH_SHORT).show());
             } else {
+                Log.w("MainActivity", "Key registration failed, current URL: " + currentUrl);
                 mainHandler.post(() -> Toast.makeText(this,
-                        R.string.key_register_failed, Toast.LENGTH_LONG).show());
+                        "密钥注册失败，当前地址: " + currentUrl + "，请在设置中检查地址是否正确", Toast.LENGTH_LONG).show());
             }
         }).start();
     }

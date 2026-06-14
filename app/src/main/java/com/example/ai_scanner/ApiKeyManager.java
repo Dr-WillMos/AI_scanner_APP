@@ -50,9 +50,18 @@ public final class ApiKeyManager {
         String baseUrl = getBaseUrl(context);
         String deviceName = Build.MANUFACTURER + " " + Build.MODEL;
 
+        // 如果地址是模拟器专用地址(10.0.2.2)或本机地址，只在调试日志中提示，不阻止尝试
+        // — 真实部署时后端地址应为局域网 IP 或公网域名
+        if (baseUrl.contains("10.0.2.2") || baseUrl.contains("localhost") || baseUrl.contains("127.0.0.1")) {
+            Log.w(TAG, "Register attempt with local/emulator address: " + baseUrl
+                    + " — if this fails, check that the backend is reachable");
+        }
+
         HttpURLConnection connection = null;
         try {
-            URL url = new URL(baseUrl + "/api/v1/keys/register");
+            String registerUrl = baseUrl + "/api/v1/keys/register";
+            Log.i(TAG, "Registering key at " + registerUrl);
+            URL url = new URL(registerUrl);
             connection = (HttpURLConnection) url.openConnection();
             connection.setConnectTimeout(TIMEOUT_MS);
             connection.setReadTimeout(TIMEOUT_MS);
@@ -79,6 +88,13 @@ public final class ApiKeyManager {
                 if (code == 200) {
                     JSONObject data = json.getJSONObject("data");
                     String apiKey = data.getString("apiKey");
+                    // expiresAt is optional per spec; log if present
+                    if (!data.isNull("expiresAt")) {
+                        String expiresAt = data.optString("expiresAt", null);
+                        if (expiresAt != null && !expiresAt.isEmpty()) {
+                            Log.i(TAG, "Key expires at: " + expiresAt);
+                        }
+                    }
                     saveApiKey(context, apiKey);
                     markRegistered(context);
                     Log.i(TAG, "API key registered successfully");

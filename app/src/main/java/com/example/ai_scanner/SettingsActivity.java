@@ -78,6 +78,12 @@ public class SettingsActivity extends AppCompatActivity {
         swMobileData.setOnCheckedChangeListener((v, checked) ->
                 prefs.edit().putBoolean(getString(R.string.key_mobile_data_enabled), checked).apply());
 
+        // Async detection toggle
+        SwitchMaterial swAsyncDetect = findViewById(R.id.swAsyncDetect);
+        swAsyncDetect.setChecked(prefs.getBoolean(getString(R.string.key_async_detect), false));
+        swAsyncDetect.setOnCheckedChangeListener((v, checked) ->
+                prefs.edit().putBoolean(getString(R.string.key_async_detect), checked).apply());
+
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
     }
 }

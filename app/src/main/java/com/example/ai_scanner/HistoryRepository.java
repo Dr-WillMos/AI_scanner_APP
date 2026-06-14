@@ -10,6 +10,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,8 +55,29 @@ public final class HistoryRepository {
                 .getString(context.getString(R.string.key_api_key), "");
     }
 
+    /**
+     * Simplified overload — no optional filters.
+     */
     public static HistoryPage fetchRemoteHistory(Context context, String deviceId,
                                                   Long afterId, int page, int size) {
+        return fetchRemoteHistory(context, deviceId, afterId, page, size,
+                null, null, null, null);
+    }
+
+    /**
+     * Fetch remote history with full filter support per APP_API_REFERENCE.md §5.
+     *
+     * @param authorId   filter by publisher id (nullable)
+     * @param riskLevel  filter by risk level: HIGH / MEDIUM / SAFE (nullable)
+     * @param startDate  start date ISO DATE e.g. "2026-06-01" (nullable)
+     * @param endDate    end date ISO DATE e.g. "2026-06-14" (nullable)
+     */
+    public static HistoryPage fetchRemoteHistory(Context context, String deviceId,
+                                                  Long afterId, int page, int size,
+                                                  String authorId,
+                                                  String riskLevel,
+                                                  String startDate,
+                                                  String endDate) {
         HttpURLConnection connection = null;
         try {
             String baseUrl = getBaseUrl(context);
@@ -72,6 +94,19 @@ public final class HistoryRepository {
                 if (size > 0) {
                     urlBuilder.append("&size=").append(size);
                 }
+            }
+
+            if (authorId != null && !authorId.isEmpty()) {
+                urlBuilder.append("&authorId=").append(URLEncoder.encode(authorId, "UTF-8"));
+            }
+            if (riskLevel != null && !riskLevel.isEmpty()) {
+                urlBuilder.append("&riskLevel=").append(riskLevel);
+            }
+            if (startDate != null && !startDate.isEmpty()) {
+                urlBuilder.append("&startDate=").append(startDate);
+            }
+            if (endDate != null && !endDate.isEmpty()) {
+                urlBuilder.append("&endDate=").append(endDate);
             }
 
             URL url = new URL(urlBuilder.toString());

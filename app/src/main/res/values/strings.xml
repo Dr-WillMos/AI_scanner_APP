@@ -134,4 +134,24 @@
     <string name="dev_info_ok">确定</string>
     <string name="dev_info_no_more">不再提示</string>
     <string name="dev_info_disabled">已关闭启动提示，可在设置中重新开启</string>
+
+    <!-- API Key 注册 -->
+    <string name="key_registering">正在注册设备密钥…</string>
+    <string name="key_register_success">设备密钥注册成功</string>
+    <string name="key_register_failed">密钥注册失败，请在设置中手动填写 API Key</string>
+    <string name="key_re_registering">密钥已过期，正在自动重新注册…</string>
+    <string name="key_re_register_success">密钥已更新，正在重试请求</string>
+    <string name="key_re_register_failed">自动重新注册失败，请在设置中检查 API Key</string>
+    <string name="settings_api_key_registered">API Key（已自动注册）</string>
+    <string name="settings_api_key_hint_registered">已通过设备注册自动获取，也可手动修改</string>
+
+    <!-- 400 细分错误 -->
+    <string name="upload_error_empty_video">视频文件为空，请重新录制</string>
+    <string name="upload_error_corrupted_video">视频文件已损坏或格式不正确</string>
+    <string name="upload_error_not_mp4">仅支持 MP4 格式视频</string>
+    <string name="upload_error_missing_params">检测参数缺失，请填写发布者ID后重试</string>
+    <string name="upload_error_video_too_large">视频文件过大，请缩短录制时间</string>
+
+    <!-- 限流监控 -->
+    <string name="rate_limit_near">请求配额即将用尽，请稍后再试</string>
 </resources>

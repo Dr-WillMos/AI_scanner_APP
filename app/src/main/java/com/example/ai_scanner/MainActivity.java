@@ -84,6 +84,8 @@ public class MainActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             showDevInfoDialogIfNeeded();
         }
+
+        registerApiKeyIfNeeded();
     }
 
     @Override
@@ -304,6 +306,22 @@ public class MainActivity extends AppCompatActivity {
                 Log.w("MainActivity", "Health check failed", e);
                 mainHandler.post(() -> Toast.makeText(this,
                         "后端不可达，请检查网络和服务地址", Toast.LENGTH_SHORT).show());
+            }
+        }).start();
+    }
+
+    private void registerApiKeyIfNeeded() {
+        if (ApiKeyManager.isRegistered(this)) {
+            return;
+        }
+        new Thread(() -> {
+            boolean ok = ApiKeyManager.ensureKeyRegistered(this);
+            if (ok) {
+                mainHandler.post(() -> Toast.makeText(this,
+                        R.string.key_register_success, Toast.LENGTH_SHORT).show());
+            } else {
+                mainHandler.post(() -> Toast.makeText(this,
+                        R.string.key_register_failed, Toast.LENGTH_LONG).show());
             }
         }).start();
     }

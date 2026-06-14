@@ -84,6 +84,27 @@ public final class HistoryRepository {
 
             int responseCode = connection.getResponseCode();
             String responseBody = readResponseBody(connection);
+
+            monitorRateLimitHeaders(TAG, connection);
+
+            if (responseCode == 401) {
+                Log.w(TAG, "History got 401, attempting key re-registration");
+                boolean reRegOk = ApiKeyManager.registerKey(context);
+                if (reRegOk) {
+                    Log.i(TAG, "Key re-registered, retrying history fetch");
+                    connection.disconnect();
+                    connection = (HttpURLConnection) new URL(urlBuilder.toString()).openConnection();
+                    connection.setConnectTimeout(NETWORK_TIMEOUT_MS);
+                    connection.setReadTimeout(NETWORK_TIMEOUT_MS);
+                    connection.setRequestMethod("GET");
+                    connection.setUseCaches(false);
+                    connection.setRequestProperty("X-API-Key", getApiKey(context));
+                    responseCode = connection.getResponseCode();
+                    responseBody = readResponseBody(connection);
+                    monitorRateLimitHeaders(TAG, connection);
+                }
+            }
+
             if (responseCode >= 200 && responseCode < 300) {
                 return parseHistoryResponse(responseBody);
             } else {
@@ -102,44 +123,32 @@ public final class HistoryRepository {
 
     public static void syncRemoteToLocal(Context context, String deviceId) {
         HistoryDao dao = AppDatabase.getInstance(context).historyDao();
-        Long lastId = dao.getLatestId();
+        Long afterId = dao.getLatestId();
 
-        HistoryPage result = fetchRemoteHistory(context, deviceId, lastId, 1, 50);
-        if (result == null || result.records.isEmpty()) {
-            return;
-        }
-
-        for (HistoryItem item : result.records) {
-            HistoryEntity entity = new HistoryEntity();
-            entity.id = item.id;
-            entity.deviceId = item.deviceId;
-            entity.authorId = item.authorId;
-            entity.riskLevel = item.riskLevel;
-            entity.score = item.score;
-            entity.createdAt = item.createdAt;
-            entity.reason = "";
-            entity.source = "";
-            entity.transcription = "";
-            dao.insert(entity);
-        }
-
-        if (result.hasMore && result.latestId > 0) {
-            HistoryPage nextResult = fetchRemoteHistory(context, deviceId, result.latestId, 1, 50);
-            if (nextResult != null && !nextResult.records.isEmpty()) {
-                for (HistoryItem item : nextResult.records) {
-                    HistoryEntity entity = new HistoryEntity();
-                    entity.id = item.id;
-                    entity.deviceId = item.deviceId;
-                    entity.authorId = item.authorId;
-                    entity.riskLevel = item.riskLevel;
-                    entity.score = item.score;
-                    entity.createdAt = item.createdAt;
-                    entity.reason = "";
-                    entity.source = "";
-                    entity.transcription = "";
-                    dao.insert(entity);
-                }
+        while (true) {
+            HistoryPage result = fetchRemoteHistory(context, deviceId, afterId, 1, 50);
+            if (result == null || result.records.isEmpty()) {
+                break;
             }
+
+            for (HistoryItem item : result.records) {
+                HistoryEntity entity = new HistoryEntity();
+                entity.id = item.id;
+                entity.deviceId = item.deviceId;
+                entity.authorId = item.authorId;
+                entity.riskLevel = item.riskLevel;
+                entity.score = item.score;
+                entity.createdAt = item.createdAt;
+                entity.reason = "";
+                entity.source = "";
+                entity.transcription = "";
+                dao.insert(entity);
+            }
+
+            if (!result.hasMore || result.latestId <= 0) {
+                break;
+            }
+            afterId = result.latestId;
         }
     }
 
@@ -179,6 +188,15 @@ public final class HistoryRepository {
         } catch (Exception e) {
             Log.e(TAG, "parseHistoryResponse failed", e);
             return null;
+        }
+    }
+
+    private static void monitorRateLimitHeaders(String tag, HttpURLConnection connection) {
+        String limit = connection.getHeaderField("X-RateLimit-Limit");
+        String remaining = connection.getHeaderField("X-RateLimit-Remaining");
+        String reset = connection.getHeaderField("X-RateLimit-Reset");
+        if (limit != null || remaining != null) {
+            Log.i(tag, "RateLimit: limit=" + limit + ", remaining=" + remaining + ", reset=" + reset);
         }
     }
 

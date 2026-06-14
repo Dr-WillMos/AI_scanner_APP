@@ -1247,7 +1247,7 @@ public class FloatingOverlayService extends Service {
         String baseUrl = prefs.getString(getString(R.string.key_api_base_url),
                 getString(R.string.api_url_default));
         String deviceId = DeviceIdProvider.getDeviceId(this);
-        String apiKey = getApiKey();
+        final String[] apiKeyHolder = { getApiKey() };
 
         final Uri videoUri = uriForUpload;
         uriForUpload = null;
@@ -1304,7 +1304,7 @@ public class FloatingOverlayService extends Service {
                     connection.setDoOutput(true);
                     connection.setUseCaches(false);
                     connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
-                    connection.setRequestProperty("X-API-Key", apiKey);
+                    connection.setRequestProperty("X-API-Key", apiKeyHolder[0]);
                     connection.setRequestProperty("X-Request-Id", requestId);
 
                     writeMultipartBody(connection, videoUri, deviceId, currentAuthorId, boundary);
@@ -1314,6 +1314,8 @@ public class FloatingOverlayService extends Service {
                     String responseBody = readResponseBody(connection);
 
                     Log.i(TAG, "Upload response: code=" + responseCode);
+
+                    monitorRateLimitHeaders(connection);
 
                     if (responseCode >= 200 && responseCode < 300) {
                         Log.i(TAG, "upload success: code=" + responseCode + ", body=" + responseBody);
@@ -1337,7 +1339,18 @@ public class FloatingOverlayService extends Service {
                     }
 
                     if (responseCode == 401) {
-                        handlePermanentFailure(recordId, responseCode, responseBody, "API Key 无效或已过期，请重新注册");
+                        Log.w(TAG, "Got 401, attempting key re-registration");
+                        mainHandler.post(() -> Toast.makeText(this,
+                                R.string.key_re_registering, Toast.LENGTH_SHORT).show());
+                        boolean reRegOk = ApiKeyManager.registerKey(FloatingOverlayService.this);
+                        if (reRegOk) {
+                            apiKeyHolder[0] = getApiKey();
+                            mainHandler.post(() -> Toast.makeText(this,
+                                    R.string.key_re_register_success, Toast.LENGTH_SHORT).show());
+                            attempt++;
+                            continue;
+                        }
+                        handlePermanentFailure(recordId, responseCode, responseBody, "API Key 无效且重新注册失败");
                         completed = true;
                         break;
                     }
@@ -1496,11 +1509,36 @@ public class FloatingOverlayService extends Service {
         updateUploadRecordStatus(recordId, "FAILED", "HTTP " + httpCode + ": " + message, 0);
         mainHandler.post(() -> {
             int stringRes;
-            if (httpCode == 400) stringRes = R.string.upload_bad_request;
-            else if (httpCode == 401) stringRes = R.string.upload_auth_failed;
-            else stringRes = R.string.analyze_request_failed;
+            if (httpCode == 400) {
+                stringRes = resolve400ErrorMessage(body);
+            } else if (httpCode == 401) {
+                stringRes = R.string.key_re_register_failed;
+            } else {
+                stringRes = R.string.analyze_request_failed;
+            }
             Toast.makeText(this, stringRes, Toast.LENGTH_LONG).show();
         });
+    }
+
+    private int resolve400ErrorMessage(String responseBody) {
+        if (responseBody == null) return R.string.upload_bad_request;
+        String lower = responseBody.toLowerCase();
+        if (lower.contains("不能为空") || lower.contains("empty") || lower.contains("null")) {
+            return R.string.upload_error_empty_video;
+        }
+        if (lower.contains("损坏") || lower.contains("corrupted") || lower.contains("格式不正确")) {
+            return R.string.upload_error_corrupted_video;
+        }
+        if (lower.contains("仅支持") || lower.contains("mp4") || lower.contains("格式")) {
+            return R.string.upload_error_not_mp4;
+        }
+        if (lower.contains("缺少") || lower.contains("missing") || lower.contains("参数")) {
+            return R.string.upload_error_missing_params;
+        }
+        if (lower.contains("过大") || lower.contains("too large") || lower.contains("10mb")) {
+            return R.string.upload_error_video_too_large;
+        }
+        return R.string.upload_bad_request;
     }
 
     private void writeMultipartBody(HttpURLConnection connection, Uri videoUri,
@@ -1975,6 +2013,27 @@ public class FloatingOverlayService extends Service {
             topBannerAdded = safeAddView(topBannerView, topBannerParams);
         } else {
             safeUpdateViewLayout(topBannerView, topBannerParams);
+        }
+    }
+
+    private void monitorRateLimitHeaders(HttpURLConnection connection) {
+        String limit = connection.getHeaderField("X-RateLimit-Limit");
+        String remaining = connection.getHeaderField("X-RateLimit-Remaining");
+        String reset = connection.getHeaderField("X-RateLimit-Reset");
+
+        if (limit != null || remaining != null) {
+            Log.i(TAG, "RateLimit: limit=" + limit + ", remaining=" + remaining + ", reset=" + reset);
+        }
+
+        if (remaining != null) {
+            try {
+                int remainingVal = Integer.parseInt(remaining.trim());
+                if (remainingVal <= 3) {
+                    mainHandler.post(() -> Toast.makeText(this,
+                            R.string.rate_limit_near, Toast.LENGTH_SHORT).show());
+                }
+            } catch (NumberFormatException ignored) {
+            }
         }
     }
 }

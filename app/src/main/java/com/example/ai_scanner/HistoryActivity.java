@@ -140,6 +140,12 @@ public class HistoryActivity extends AppCompatActivity {
         super.onStart();
         executor.execute(() -> {
             HistoryRepository.syncRemoteToLocal(this, deviceId);
+            // 同步完成后在主线程重新加载当前页"刷新 UI
+            mainHandler.post(() -> {
+                if (!isFinishing()) {
+                    loadPage(1, true);
+                }
+            });
         });
     }
 

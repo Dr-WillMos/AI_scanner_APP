@@ -154,4 +154,22 @@
 
     <!-- 限流监控 -->
     <string name="rate_limit_near">请求配额即将用尽，请稍后再试</string>
+
+    <!-- 异步检测 -->
+    <string name="key_async_detect">async_detect_enabled</string>
+    <string name="settings_async_detect_toggle">异步检测模式</string>
+    <string name="settings_async_detect_desc">开启后使用异步方式提交检测请求（适合更长视频）</string>
+    <string name="async_submit_failed">异步提交失败，请重试</string>
+    <string name="async_polling">正在等待分析结果…</string>
+    <string name="async_task_failed">异步分析任务失败，请稍后重试</string>
+    <string name="async_poll_exhausted">等待超时，请稍后查看历史记录</string>
+
+    <!-- 异步检测 400 细分错误（与同步共用大部分） -->
+    <string name="upload_error_video_corrupted">视频文件已损坏或格式不正确</string>
+
+    <!-- 上传重试增强提示 -->
+    <string name="upload_retry_exhausted_guide">上传多次失败，请检查网络连接或服务端是否正常，稍后重试</string>
+
+    <!-- 录音权限 -->
+    <string name="audio_permission_denied">未授予录音权限，录屏将没有声音</string>
 </resources>

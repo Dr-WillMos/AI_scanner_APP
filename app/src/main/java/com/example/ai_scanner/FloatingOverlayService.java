@@ -780,7 +780,15 @@ public class FloatingOverlayService extends Service {
 
         resultStatusText.setText(getString(R.string.result_status_format, safeText(result.riskLevel)));
         resultRiskLevelText.setText(getString(R.string.result_level_format, safeText(result.riskLevel)));
-        resultLine1Text.setText(getString(R.string.result_risk_score_format, toPercent(result.riskScore)));
+
+        // Per API spec: blacklist-hit path (source != null) does NOT include score.
+        // Hide the score line to avoid showing misleading "0.00%" for a blacklist HIGH result.
+        if (result.source != null && !result.source.isEmpty()) {
+            resultLine1Text.setVisibility(View.GONE);
+        } else {
+            resultLine1Text.setVisibility(View.VISIBLE);
+            resultLine1Text.setText(getString(R.string.result_risk_score_format, toPercent(result.riskScore)));
+        }
 
         if (result.reason != null && !result.reason.isEmpty()) {
             resultLine2Text.setVisibility(View.VISIBLE);
@@ -1092,8 +1100,13 @@ public class FloatingOverlayService extends Service {
             mediaRecorderStarted = false;
             mediaRecorder = new MediaRecorder();
             mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+            mediaRecorder.setAudioSamplingRate(44100);
+            mediaRecorder.setAudioChannels(1);
+            mediaRecorder.setAudioEncodingBitRate(64000);
             int bitrate = Math.min(captureWidth * captureHeight * 4, MAX_VIDEO_BITRATE);
             mediaRecorder.setVideoEncodingBitRate(bitrate);
             mediaRecorder.setVideoFrameRate(RECORD_FPS);
@@ -1111,6 +1124,10 @@ public class FloatingOverlayService extends Service {
                 captureRegrantRequired = true;
                 clearCapturePermissionGrant();
                 releaseProjectionSession();
+            } else if (e instanceof SecurityException
+                    && e.getMessage() != null
+                    && e.getMessage().toLowerCase().contains("record_audio")) {
+                Log.e(TAG, "Missing RECORD_AUDIO permission for audio recording");
             }
             Log.e(TAG, "startScreenRecording failed", e);
             return false;
@@ -1282,12 +1299,14 @@ public class FloatingOverlayService extends Service {
 
             int attempt = 0;
             boolean completed = false;
+            boolean lastErrorHadOwnDelay = false;
             HttpURLConnection connection = null;
 
             while (!completed && attempt <= UploadRetryPolicy.MAX_NETWORK_RETRIES) {
                 connection = null;
+                boolean thisRoundIsHttpError = false;
                 try {
-                    if (attempt > 0) {
+                    if (attempt > 0 && !lastErrorHadOwnDelay) {
                         long delay = UploadRetryPolicy.getNetworkRetryDelayMs(attempt - 1);
                         int currentAttempt = attempt;
                         Log.i(TAG, "Upload retry attempt " + currentAttempt + ", waiting " + delay + "ms");
@@ -1296,10 +1315,20 @@ public class FloatingOverlayService extends Service {
                         Thread.sleep(delay);
                     }
 
+                    // Check whether async detection is enabled in Settings
+                    boolean useAsyncDetect = prefs.getBoolean(getString(R.string.key_async_detect), false);
+
+                    if (useAsyncDetect) {
+                        performAsyncDetection(baseUrl, videoUri, deviceId, currentAuthorId,
+                                              apiKeyHolder[0], boundary, recordId, createdAt);
+                        completed = true;
+                        break;
+                    }
+
                     URL url = new URL(baseUrl + "/api/v1/detect");
                     connection = (HttpURLConnection) url.openConnection();
-                    connection.setConnectTimeout(UploadRetryPolicy.CLIENT_TIMEOUT_MS);
-                    connection.setReadTimeout(UploadRetryPolicy.CLIENT_TIMEOUT_MS);
+                    connection.setConnectTimeout(UploadRetryPolicy.CONNECT_TIMEOUT_MS);
+                    connection.setReadTimeout(UploadRetryPolicy.READ_TIMEOUT_MS);
                     connection.setRequestMethod("POST");
                     connection.setDoOutput(true);
                     connection.setUseCaches(false);
@@ -1348,6 +1377,7 @@ public class FloatingOverlayService extends Service {
                             mainHandler.post(() -> Toast.makeText(this,
                                     R.string.key_re_register_success, Toast.LENGTH_SHORT).show());
                             attempt++;
+                            lastErrorHadOwnDelay = false;
                             continue;
                         }
                         handlePermanentFailure(recordId, responseCode, responseBody, "API Key 无效且重新注册失败");
@@ -1375,6 +1405,7 @@ public class FloatingOverlayService extends Service {
                         }
                         Thread.sleep(delay);
                         attempt++;
+                        lastErrorHadOwnDelay = true;
                         continue;
                     }
 
@@ -1384,15 +1415,19 @@ public class FloatingOverlayService extends Service {
 
                 } catch (SocketTimeoutException e) {
                     Log.e(TAG, "Upload timeout on attempt " + (attempt + 1), e);
+                    thisRoundIsHttpError = false;
                     attempt++;
                 } catch (UnknownHostException e) {
                     Log.e(TAG, "DNS resolution failed on attempt " + (attempt + 1), e);
+                    thisRoundIsHttpError = false;
                     attempt++;
                 } catch (ConnectException e) {
                     Log.e(TAG, "Connection refused on attempt " + (attempt + 1), e);
+                    thisRoundIsHttpError = false;
                     attempt++;
                 } catch (java.io.IOException e) {
                     Log.e(TAG, "IO error on attempt " + (attempt + 1), e);
+                    thisRoundIsHttpError = false;
                     if (!UploadRetryPolicy.isRetryableException(e)) {
                         handlePermanentFailure(recordId, -1, null, e.getMessage());
                         completed = true;
@@ -1414,6 +1449,7 @@ public class FloatingOverlayService extends Service {
                     if (connection != null) {
                         connection.disconnect();
                     }
+                    lastErrorHadOwnDelay = thisRoundIsHttpError;
                 }
             }
 
@@ -1429,6 +1465,98 @@ public class FloatingOverlayService extends Service {
                 mainHandler.post(this::releaseProjectionSession);
             }
         });
+    }
+
+    /**
+     * Async detection path: submit → poll → dispatch.
+     * Used when Settings → "异步检测模式" is enabled.
+     * Includes 401 re-registration retry.
+     */
+    private void performAsyncDetection(String baseUrl, Uri videoUri,
+                                        String deviceId, String authorId,
+                                        String apiKey, String boundary,
+                                        long recordId, String createdAt) {
+        AsyncDetectHelper.AsyncTaskInfo taskInfo = null;
+
+        // Submit with one 401 retry
+        for (int attempt = 0; attempt <= 1; attempt++) {
+            taskInfo = AsyncDetectHelper.submitAsyncTask(
+                    this, videoUri, deviceId, authorId, apiKey, boundary);
+            if (taskInfo != null) {
+                break;
+            }
+            // If submit failed, try re-registering key and retry once
+            if (attempt == 0) {
+                Log.w(TAG, "Async submit failed, attempting key re-registration");
+                mainHandler.post(() -> Toast.makeText(this,
+                        R.string.key_re_registering, Toast.LENGTH_SHORT).show());
+                boolean reRegOk = ApiKeyManager.registerKey(FloatingOverlayService.this);
+                if (reRegOk) {
+                    apiKey = getApiKey();
+                    mainHandler.post(() -> Toast.makeText(this,
+                            R.string.key_re_register_success, Toast.LENGTH_SHORT).show());
+                } else {
+                    handlePermanentFailure(recordId, 401, null, "API Key 无效且重新注册失败");
+                    mainHandler.post(() -> Toast.makeText(this,
+                            R.string.key_re_register_failed, Toast.LENGTH_LONG).show());
+                    return;
+                }
+            }
+        }
+
+        if (taskInfo == null) {
+            Log.e(TAG, "Async submit returned null after retry");
+            handlePermanentFailure(recordId, -1, null, "异步提交失败");
+            return;
+        }
+        Log.i(TAG, "Async task submitted: " + taskInfo.taskId + " status=" + taskInfo.status);
+
+        // Update UI to show polling state
+        mainHandler.post(() -> {
+            bannerTitleText.setText(R.string.async_polling);
+            if (!topBannerAdded) {
+                topBannerAdded = safeAddView(topBannerView, topBannerParams);
+            } else {
+                safeUpdateViewLayout(topBannerView, topBannerParams);
+            }
+        });
+
+        // 2. Poll until DONE / FAILED (max 60 polls, 1s interval per spec §4.3)
+        AsyncDetectHelper.TaskStatusResult statusResult =
+                AsyncDetectHelper.pollUntilDone(this, taskInfo.taskId, apiKey, 60, 1000);
+
+        if (statusResult == null) {
+            Log.e(TAG, "Async polling returned null for task " + taskInfo.taskId);
+            String errorMsg = getString(R.string.async_poll_exhausted);
+            updateUploadRecordStatus(recordId, "FAILED", errorMsg, 0);
+            mainHandler.post(() -> Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show());
+            return;
+        }
+
+        if ("FAILED".equals(statusResult.status)) {
+            String err = statusResult.error != null ? statusResult.error : "unknown";
+            Log.e(TAG, "Async task FAILED: " + err);
+            updateUploadRecordStatus(recordId, "FAILED", err, 0);
+            mainHandler.post(() -> Toast.makeText(this,
+                    R.string.async_task_failed, Toast.LENGTH_LONG).show());
+            return;
+        }
+
+        if ("DONE".equals(statusResult.status) && statusResult.result != null) {
+            AsyncDetectHelper.AsyncDetectResult r = statusResult.result;
+            AnalyzeResult analyzeResult = new AnalyzeResult(
+                    r.riskLevel,
+                    r.score,
+                    r.reason,
+                    r.source,
+                    r.transcription
+            );
+            saveDetectionToHistory(recordId, analyzeResult, createdAt);
+            dispatchAnalyzeResult(analyzeResult);
+        } else {
+            Log.w(TAG, "Unexpected async status: " + statusResult.status);
+            updateUploadRecordStatus(recordId, "FAILED", "Unexpected status: " + statusResult.status, 0);
+        }
     }
 
     private void dispatchAnalyzeResult(AnalyzeResult result) {

@@ -8,15 +8,17 @@ import java.util.concurrent.TimeUnit;
 
 public final class UploadRetryPolicy {
 
-    public static final int CLIENT_TIMEOUT_MS = 45_000;
+    // 连接超时：15秒；读超时：60秒（视频上传+分析可能需要较长时间）
+    public static final int CONNECT_TIMEOUT_MS = 15_000;
+    public static final int READ_TIMEOUT_MS = 60_000;
 
     public static final int MAX_NETWORK_RETRIES = 3;
-    private static final long[] NETWORK_RETRY_DELAYS_MS = { 2000L, 4000L, 8000L };
+    private static final long[] NETWORK_RETRY_DELAYS_MS = { 1000L, 2000L, 4000L };
 
     private UploadRetryPolicy() {}
 
     public static long getNetworkRetryDelayMs(int attempt) {
-        if (attempt < 0 || attempt >= NETWORK_RETRY_DELAYS_MS.length) return 8000L;
+        if (attempt < 0 || attempt >= NETWORK_RETRY_DELAYS_MS.length) return 4000L;
         return NETWORK_RETRY_DELAYS_MS[attempt];
     }
 
@@ -55,7 +57,7 @@ public final class UploadRetryPolicy {
             }
             return 45_000L;
         }
-        if (statusCode == 502) return 30_000L;
+        if (statusCode == 502) return 15_000L;
         if (statusCode == 500 || statusCode == 503) return 10_000L;
         return 10_000L;
     }
@@ -65,5 +67,13 @@ public final class UploadRetryPolicy {
         if (statusCode == 500 || statusCode == 503) return 3;
         if (statusCode == 429) return 3;
         return 2;
+    }
+
+    /**
+     * 判断上一个错误是否为 HTTP 状态码错误（而非网络异常）。
+     * 用于避免 HTTP 重试后再次执行网络重试延迟（双重等待）。
+     */
+    public static boolean isHttpError(int statusCode) {
+        return statusCode >= 400;
     }
 }

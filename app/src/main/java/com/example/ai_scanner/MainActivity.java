@@ -314,8 +314,7 @@ public class MainActivity extends AppCompatActivity {
                 // 对 address 做基本校验
                 if (baseUrl.contains("10.0.2.2") || baseUrl.contains("localhost") || baseUrl.contains("127.0.0.1")) {
                     Log.w("MainActivity", "Health check skipped: address " + baseUrl + " is emulator/localhost only");
-                    mainHandler.post(() -> Toast.makeText(this,
-                            "当前地址 " + baseUrl + " 仅限模拟器使用，请在设置中修改为电脑局域网 IP", Toast.LENGTH_LONG).show());
+                    // Toast 已隐藏
                     return;
                 }
 
@@ -328,22 +327,14 @@ public class MainActivity extends AppCompatActivity {
                 int code = conn.getResponseCode();
                 conn.disconnect();
                 if (code == 200) {
-                    mainHandler.post(() -> Toast.makeText(this,
-                            "后端连接成功 ✓", Toast.LENGTH_SHORT).show());
+                    // Toast 已隐藏
                 } else {
                     Log.w("MainActivity", "Health check failed: HTTP " + code + " for " + baseUrl);
-                    mainHandler.post(() -> Toast.makeText(this,
-                            "后端服务异常 (HTTP " + code + ")", Toast.LENGTH_SHORT).show());
+                    // Toast 已隐藏
                 }
             } catch (Exception e) {
                 Log.w("MainActivity", "Health check failed for URL", e);
-                SharedPreferences prefs = getSharedPreferences(
-                        getString(R.string.key_settings_prefs), MODE_PRIVATE);
-                String baseUrl = prefs.getString(getString(R.string.key_api_base_url),
-                        getString(R.string.api_url_default));
-                final String displayUrl = baseUrl;
-                mainHandler.post(() -> Toast.makeText(this,
-                        "❌ 后端不可达，当前地址: " + displayUrl + "，请在设置中修改为电脑局域网 IP", Toast.LENGTH_LONG).show());
+                // Toast 已隐藏
             }
         }).start();
     }
@@ -361,12 +352,10 @@ public class MainActivity extends AppCompatActivity {
 
             boolean ok = ApiKeyManager.ensureKeyRegistered(this);
             if (ok) {
-                mainHandler.post(() -> Toast.makeText(this,
-                        R.string.key_register_success, Toast.LENGTH_SHORT).show());
+                // Toast 已隐藏
             } else {
                 Log.w("MainActivity", "Key registration failed, current URL: " + currentUrl);
-                mainHandler.post(() -> Toast.makeText(this,
-                        "密钥注册失败，当前地址: " + currentUrl + "，请在设置中检查地址是否正确", Toast.LENGTH_LONG).show());
+                // Toast 已隐藏，不影响功能
             }
         }).start();
     }

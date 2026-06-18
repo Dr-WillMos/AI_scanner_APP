@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ShortVideoGuard</string>
+    <string name="app_name">视盾</string>
 
     <string name="main_title">ShortVideoGuard Demo</string>
     <string name="main_desc">展示APP核心运作逻辑</string>
@@ -25,7 +25,7 @@
     <string name="go_grant">去授权</string>
     <string name="cancel">取消</string>
 
-    <string name="panel_title">ShortVideoGuard</string>
+    <string name="panel_title">视盾</string>
     <string name="author_id_hint">发布者ID（必填）</string>
     <string name="author_id_prefs">author_id_prefs</string>
     <string name="key_author_id">author_id</string>
@@ -105,7 +105,7 @@
     <string name="settings_api_key_helper">与服务端配置的 api.key 保持一致，所有业务请求携带此密钥</string>
     <string name="settings_mobile_data_toggle">允许使用移动数据</string>
     <string name="settings_mobile_data_desc">关闭后仅在WiFi环境下上传视频进行检测</string>
-    <string name="api_url_default">http://10.0.2.2:8080</string>
+    <string name="api_url_default">http://192.168.5.60:8080</string>
     <string name="mobile_data_blocked">当前为移动网络，已禁止上传，可在设置中开启</string>
 
     <!-- 上传通知 -->
@@ -129,6 +129,19 @@
     <string name="result_risk_4">• 保健品</string>
     <string name="again_check">再次检测</string>
     <string name="close">关闭</string>
+
+    <!-- New result dialog labels -->
+    <string name="result_status_success">检测完成 | 状态: success</string>
+    <string name="result_label_score">风险评分</string>
+    <string name="result_label_ai_glitch">AI伪造概率</string>
+    <string name="result_label_violence">暴力概率</string>
+    <string name="result_label_trigger">触发规则</string>
+    <string name="result_label_transcript">文本片段</string>
+
+    <!-- Chinese risk level labels -->
+    <string name="risk_high_chinese">高危</string>
+    <string name="risk_medium_chinese">中危</string>
+    <string name="risk_safe_chinese">安全</string>
 
     <string name="dev_info_title">开发者信息与网络状态</string>
     <string name="dev_info_ok">确定</string>

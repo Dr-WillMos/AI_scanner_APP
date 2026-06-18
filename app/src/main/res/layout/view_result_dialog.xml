@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/overlay_mask_40"
-    android:padding="20dp">
+    android:padding="16dp">
 
     <LinearLayout
         android:id="@+id/resultCard"
@@ -12,131 +12,288 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:background="@drawable/bg_result_dialog"
-        android:elevation="12dp"
+        android:elevation="8dp"
         android:orientation="vertical"
         android:paddingStart="24dp"
-        android:paddingTop="28dp"
+        android:paddingTop="26dp"
         android:paddingEnd="24dp"
-        android:paddingBottom="28dp">
+        android:paddingBottom="26dp">
 
+        <!-- ========== 一、顶部品牌区 ========== -->
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:id="@+id/llBrandArea"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/ivBrandLogo"
+                android:layout_width="54dp"
+                android:layout_height="54dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_shield_play" />
+
+            <TextView
+                android:id="@+id/tvBrandTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:text="视盾"
+                android:textColor="@color/text_dark"
+                android:textSize="34sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- ========== 二、检测状态条 ========== -->
+        <LinearLayout
+            android:id="@+id/llStatusPill"
+            android:layout_width="wrap_content"
+            android:layout_height="42dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_status_pill"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp">
+
+            <ImageView
+                android:id="@+id/ivStatusIcon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_check_mark"
+                app:tint="@color/brand_blue" />
+
+            <TextView
+                android:id="@+id/tvResultStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <!-- ========== 三、分隔线 ========== -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="16dp"
+            android:background="@color/border_light" />
+
+        <!-- ========== 四、风险等级标题区 ========== -->
+        <LinearLayout
+            android:id="@+id/llRiskHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
             <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
+                android:id="@+id/ivRiskIcon"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
                 android:contentDescription="@null"
-                android:src="@drawable/ic_shield_scan"
-                app:tint="@color/text_primary" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="@string/panel_title"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/tvResultStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="@string/result_done"
-            android:textColor="@color/brand_primary"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:background="@drawable/bg_risk_high_container"
-            android:orientation="vertical"
-            android:padding="16dp">
+                android:src="@drawable/ic_warning_shield"
+                app:tint="@color/risk_red" />
 
             <TextView
                 android:id="@+id/tvRiskLevel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/result_level_high"
-                android:textColor="@color/risk_high"
-                android:textSize="24sp"
+                android:layout_marginStart="8dp"
+                android:textSize="26sp"
                 android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvRisk1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:lineSpacingExtra="5dp"
-                android:text="@string/result_risk_1"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp" />
-
-            <TextView
-                android:id="@+id/tvRisk2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/result_risk_2"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp" />
-
-            <TextView
-                android:id="@+id/tvRisk3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/result_risk_3"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp" />
-
-            <TextView
-                android:id="@+id/tvRisk4"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/result_risk_4"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp" />
-
-                    <TextView
-                        android:id="@+id/tvRisk5"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:lineSpacingExtra="4dp"
-                        android:text="@string/result_transcript_default"
-                        android:textColor="@color/text_primary"
-                        android:textSize="15sp" />
         </LinearLayout>
 
+        <!-- ========== 五、触发规则说明卡片 ========== -->
+        <LinearLayout
+            android:id="@+id/cardTrigger"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/bg_trigger_card"
+            android:gravity="start"
+            android:orientation="horizontal"
+            android:padding="16dp">
+
+            <ImageView
+                android:id="@+id/ivTriggerIcon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginTop="3dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_info_circle"
+                app:tint="@color/risk_red" />
+
+            <TextView
+                android:id="@+id/tvTriggerValue"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:lineSpacingExtra="6dp"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <!-- ========== 六、风险指标卡片 ========== -->
+        <LinearLayout
+            android:id="@+id/cardMetrics"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/bg_metrics_card"
+            android:orientation="vertical">
+
+            <!-- 第1行：风险评分 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="58dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_clock"
+                    app:tint="@color/text_gray" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:text="风险评分"
+                    android:textColor="@color/text_gray"
+                    android:textSize="19sp" />
+
+                <TextView
+                    android:id="@+id/tvScoreValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_dark"
+                    android:textSize="19sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/border_light" />
+
+            <!-- 第2行：AI伪造概率 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="58dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_face"
+                    app:tint="@color/text_gray" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:text="AI伪造概率"
+                    android:textColor="@color/text_gray"
+                    android:textSize="19sp" />
+
+                <TextView
+                    android:id="@+id/tvAiGlitchValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_dark"
+                    android:textSize="19sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/border_light" />
+
+            <!-- 第3行：暴力概率 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="58dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_fist"
+                    app:tint="@color/text_gray" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:text="暴力概率"
+                    android:textColor="@color/text_gray"
+                    android:textSize="19sp" />
+
+                <TextView
+                    android:id="@+id/tvViolenceValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_dark"
+                    android:textSize="19sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ========== 七、操作按钮区 ========== -->
         <Button
             android:id="@+id/btnAgainCheck"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:layout_marginTop="24dp"
-            android:backgroundTint="@color/brand_primary"
-            android:text="@string/again_check"
+            android:layout_height="52dp"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/bg_btn_primary"
+            android:drawableStart="@drawable/ic_refresh"
+            android:drawablePadding="1dp"
+            android:drawableTint="@color/white"
+            android:gravity="center"
+            android:paddingStart="16dp"
+            android:stateListAnimator="@null"
+            android:text="再次检测"
+            android:textAllCaps="false"
             android:textColor="@color/white"
-            android:textSize="15sp"
+            android:textSize="20sp"
             android:textStyle="bold" />
 
         <Button
             android:id="@+id/btnCloseResult"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:layout_marginTop="12dp"
-            android:backgroundTint="@color/secondary_button_bg"
-            android:text="@string/close"
-            android:textColor="@color/text_primary"
-            android:textSize="15sp" />
+            android:layout_height="52dp"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_btn_secondary"
+            android:drawableStart="@drawable/ic_close"
+            android:drawablePadding="1dp"
+            android:drawableTint="@color/text_dark"
+            android:gravity="center"
+            android:paddingStart="16dp"
+            android:stateListAnimator="@null"
+            android:text="关闭"
+            android:textAllCaps="false"
+            android:textColor="@color/text_dark"
+            android:textSize="20sp"
+            android:textStyle="bold" />
     </LinearLayout>
-
 </FrameLayout>

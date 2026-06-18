@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="220dp"
+    android:layout_width="190dp"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="12dp"
+    android:padding="20dp"
     android:background="@drawable/bg_panel_card"
     android:elevation="8dp">
 
@@ -11,16 +11,18 @@
         android:id="@+id/tvPanelTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
         android:text="@string/panel_title"
         android:textColor="@color/text_primary"
         android:textStyle="bold"
-        android:textSize="16sp" />
+        android:textSize="18sp"
+        android:layout_marginBottom="14dp" />
 
     <EditText
         android:id="@+id/etAuthorId"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginBottom="12dp"
         android:hint="@string/author_id_hint"
         android:inputType="text"
         android:maxLines="1"
@@ -28,23 +30,32 @@
         android:background="@drawable/bg_panel_input"
         android:textColor="@color/text_primary"
         android:textColorHint="@color/text_assist"
-        android:textSize="13sp" />
+        android:textSize="13sp"
+        android:visibility="gone" />
 
     <Button
         android:id="@+id/btnStartCheck"
         android:layout_width="match_parent"
-        android:layout_height="44dp"
-        android:layout_marginTop="8dp"
-        android:backgroundTint="@color/brand_primary"
+        android:layout_height="50dp"
+        android:background="@drawable/bg_btn_primary"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:gravity="center"
+        android:text="@string/panel_detect"
         android:textColor="@color/white"
-        android:text="@string/panel_detect" />
+        android:textSize="17sp"
+        android:textStyle="bold" />
 
     <Button
         android:id="@+id/btnOpenSettings"
         android:layout_width="match_parent"
-        android:layout_height="44dp"
-        android:layout_marginTop="8dp"
-        android:backgroundTint="@color/secondary_button_bg"
+        android:layout_height="50dp"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/bg_btn_secondary"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:gravity="center"
         android:text="@string/panel_settings"
-        android:textColor="@color/text_primary" />
+        android:textColor="@color/text_primary"
+        android:textSize="15sp" />
 </LinearLayout>

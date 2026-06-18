@@ -27,10 +27,10 @@ app = Flask("mock-backend")
 # 固定返回结果 — 改这里调整风控等级
 # ---------------------------------------------------------------------------
 FIXED_RESULT = {
-    "riskLevel": "SAFE",
-    "reason": "综合评分正常",
-    "score": 0.1,
-    "transcription": "mock transcription",
+    "riskLevel": "MEDIUM",
+    "reason": "检测到疑似违规内容，触发中等风险规则",
+    "score": 0.65,
+    "transcription": "mock transcription 中危测试",
 }
 
 # ---------------------------------------------------------------------------

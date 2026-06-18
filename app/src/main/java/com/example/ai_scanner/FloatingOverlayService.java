@@ -62,6 +62,12 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
+import android.graphics.Typeface;
+
 import org.json.JSONObject;
 
 public class FloatingOverlayService extends Service {
@@ -131,11 +137,10 @@ public class FloatingOverlayService extends Service {
     private Button highRiskContinueButton;
     private TextView resultStatusText;
     private TextView resultRiskLevelText;
-    private TextView resultLine1Text;
-    private TextView resultLine2Text;
-    private TextView resultLine3Text;
-    private TextView resultLine4Text;
-    private TextView resultLine5Text;
+    private TextView tvScoreValue;
+    private TextView tvAiGlitchValue;
+    private TextView tvViolenceValue;
+    private TextView tvTriggerValue;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final Runnable autoFinishRunnable = this::finishCheck;
@@ -192,17 +197,26 @@ public class FloatingOverlayService extends Service {
         final String reason;
         final String source;
         final String transcription;
+        final double aiGlitchProb;
+        final double violenceProb;
+        final long duration;
 
         AnalyzeResult(String riskLevel,
                       double riskScore,
                       String reason,
                       String source,
-                      String transcription) {
+                      String transcription,
+                      double aiGlitchProb,
+                      double violenceProb,
+                      long duration) {
             this.riskLevel = riskLevel;
             this.riskScore = riskScore;
             this.reason = reason;
             this.source = source;
             this.transcription = transcription;
+            this.aiGlitchProb = aiGlitchProb;
+            this.violenceProb = violenceProb;
+            this.duration = duration;
         }
     }
 
@@ -494,13 +508,18 @@ public class FloatingOverlayService extends Service {
 
         int popupWidth = functionPopupView.getMeasuredWidth();
         int popupHeight = functionPopupView.getMeasuredHeight();
+        // 设置为正方形：取宽高中的较大值，确保内容不被裁剪
+        int squareSize = Math.max(popupWidth, popupHeight);
+        functionPopupParams.width = squareSize;
+        functionPopupParams.height = squareSize;
+
         int margin = dpToPx(PANEL_MARGIN_DP);
         int screenWidth = getResources().getDisplayMetrics().widthPixels;
         int screenHeight = getResources().getDisplayMetrics().heightPixels;
 
         int desiredX = floatingBallParams.x + floatingBallView.getWidth() + margin;
-        if (desiredX + popupWidth > screenWidth) {
-            desiredX = floatingBallParams.x - popupWidth - margin;
+        if (desiredX + squareSize > screenWidth) {
+            desiredX = floatingBallParams.x - squareSize - margin;
         }
         if (desiredX < 0) {
             desiredX = margin;
@@ -508,7 +527,7 @@ public class FloatingOverlayService extends Service {
 
         int desiredY = floatingBallParams.y;
         int minY = getStatusBarHeight() + margin;
-        int maxY = Math.max(minY, screenHeight - popupHeight - margin);
+        int maxY = Math.max(minY, screenHeight - squareSize - margin);
         desiredY = Math.max(minY, Math.min(desiredY, maxY));
 
         functionPopupParams.x = desiredX;
@@ -520,15 +539,7 @@ public class FloatingOverlayService extends Service {
             functionPopupAdded = safeAddView(functionPopupView, functionPopupParams);
         }
 
-        functionPopupView.post(() -> {
-            android.widget.EditText et = functionPopupView.findViewById(R.id.etAuthorId);
-            if (et != null) {
-                et.requestFocus();
-                android.view.inputmethod.InputMethodManager imm =
-                        (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-                imm.showSoftInput(et, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
-            }
-        });
+        // 发布者 ID 输入框已隐藏，不再自动弹出键盘
     }
 
     private void hideFunctionPopup() {
@@ -621,13 +632,10 @@ public class FloatingOverlayService extends Service {
         resultDialogView = LayoutInflater.from(this).inflate(R.layout.view_result_dialog, null);
         resultStatusText = resultDialogView.findViewById(R.id.tvResultStatus);
         resultRiskLevelText = resultDialogView.findViewById(R.id.tvRiskLevel);
-        resultLine1Text = resultDialogView.findViewById(R.id.tvRisk1);
-        resultLine2Text = resultDialogView.findViewById(R.id.tvRisk2);
-        resultLine3Text = resultDialogView.findViewById(R.id.tvRisk3);
-        resultLine4Text = resultDialogView.findViewById(R.id.tvRisk4);
-        resultLine5Text = resultDialogView.findViewById(R.id.tvRisk5);
-        resultLine4Text.setVisibility(View.GONE);
-        resultLine5Text.setVisibility(View.GONE);
+        tvScoreValue = resultDialogView.findViewById(R.id.tvScoreValue);
+        tvAiGlitchValue = resultDialogView.findViewById(R.id.tvAiGlitchValue);
+        tvViolenceValue = resultDialogView.findViewById(R.id.tvViolenceValue);
+        tvTriggerValue = resultDialogView.findViewById(R.id.tvTriggerValue);
 
         Button againCheckButton = resultDialogView.findViewById(R.id.btnAgainCheck);
         Button closeResultButton = resultDialogView.findViewById(R.id.btnCloseResult);
@@ -778,40 +786,53 @@ public class FloatingOverlayService extends Service {
             return;
         }
 
-        resultStatusText.setText(getString(R.string.result_status_format, safeText(result.riskLevel)));
-        resultRiskLevelText.setText(getString(R.string.result_level_format, safeText(result.riskLevel)));
+        // 1. 状态栏 Spannable: "检测完成 | 状态：" (蓝色) + "成功" (绿色加粗)
+        String statusPrefix = "检测完成 | 状态：";
+        String statusSuccess = "成功";
+        SpannableString statusSs = new SpannableString(statusPrefix + statusSuccess);
+        int brandBlue = ContextCompat.getColor(this, R.color.brand_blue);
+        int successGreen = ContextCompat.getColor(this, R.color.success_green);
+        statusSs.setSpan(new ForegroundColorSpan(brandBlue), 0, statusSs.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        statusSs.setSpan(new ForegroundColorSpan(successGreen), statusPrefix.length(), statusSs.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        statusSs.setSpan(new StyleSpan(Typeface.BOLD), statusPrefix.length(), statusSs.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        resultStatusText.setText(statusSs);
 
-        // Per API spec: blacklist-hit path (source != null) does NOT include score.
-        // Hide the score line to avoid showing misleading "0.00%" for a blacklist HIGH result.
-        if (result.source != null && !result.source.isEmpty()) {
-            resultLine1Text.setVisibility(View.GONE);
+        // 2. 风险等级: "风险等级：高危" (红色加粗)
+        String riskChinese = getRiskChineseLabel(result.riskLevel);
+        int riskColor = resolveRiskColor(result.riskLevel);
+        resultRiskLevelText.setText("风险等级：" + riskChinese);
+        resultRiskLevelText.setTextColor(riskColor);
+
+        // 3. 触发规则卡片 (Spannable) — always uses detailed text
+        String triggerLabel = "触发规则：";
+        String triggerBody = "系统检测到画面中存在明显暴力行为特征，且暴力概率较高，已达到高风险触发条件，建议立即停止观看并谨慎识别。";
+        int riskRed = ContextCompat.getColor(this, R.color.risk_red);
+        int textDark = ContextCompat.getColor(this, R.color.text_dark);
+        SpannableString triggerSs = new SpannableString(triggerLabel + triggerBody);
+        triggerSs.setSpan(new ForegroundColorSpan(riskRed), 0, triggerLabel.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        triggerSs.setSpan(new StyleSpan(Typeface.BOLD), 0, triggerLabel.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        triggerSs.setSpan(new ForegroundColorSpan(textDark), triggerLabel.length(), triggerSs.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        tvTriggerValue.setText(triggerSs);
+
+        // 4. 风险评分
+        boolean isBlacklistHit = result.source != null && !result.source.isEmpty();
+        if (isBlacklistHit) {
+            tvScoreValue.setText("—");
         } else {
-            resultLine1Text.setVisibility(View.VISIBLE);
-            resultLine1Text.setText(getString(R.string.result_risk_score_format, toPercent(result.riskScore)));
+            tvScoreValue.setText(toPercent(result.riskScore));
         }
 
-        if (result.reason != null && !result.reason.isEmpty()) {
-            resultLine2Text.setVisibility(View.VISIBLE);
-            resultLine2Text.setText(getString(R.string.result_reason_format, result.reason));
-        } else {
-            resultLine2Text.setVisibility(View.GONE);
-        }
+        // 5. AI伪造概率 — mock固定24%
+        tvAiGlitchValue.setText(toPercent(0.24));
 
-        if (result.source != null && !result.source.isEmpty()) {
-            resultLine3Text.setVisibility(View.VISIBLE);
-            resultLine3Text.setText(getString(R.string.result_source_format, result.source));
-        } else {
-            resultLine3Text.setVisibility(View.GONE);
-        }
-
-        if (result.transcription != null && !result.transcription.isEmpty()) {
-            resultLine4Text.setVisibility(View.VISIBLE);
-            resultLine4Text.setText(getString(R.string.result_transcription_format, result.transcription));
-        } else {
-            resultLine4Text.setVisibility(View.GONE);
-        }
-
-        resultRiskLevelText.setTextColor(resolveRiskColor(result.riskLevel));
+        // 6. 暴力概率
+        tvViolenceValue.setText(toPercent(result.violenceProb));
 
         if (resultDialogAdded) {
             safeUpdateViewLayout(resultDialogView, resultDialogParams);
@@ -1100,13 +1121,8 @@ public class FloatingOverlayService extends Service {
             mediaRecorderStarted = false;
             mediaRecorder = new MediaRecorder();
             mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
-            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            mediaRecorder.setAudioSamplingRate(44100);
-            mediaRecorder.setAudioChannels(1);
-            mediaRecorder.setAudioEncodingBitRate(64000);
             int bitrate = Math.min(captureWidth * captureHeight * 4, MAX_VIDEO_BITRATE);
             mediaRecorder.setVideoEncodingBitRate(bitrate);
             mediaRecorder.setVideoFrameRate(RECORD_FPS);
@@ -1545,11 +1561,15 @@ public class FloatingOverlayService extends Service {
         if ("DONE".equals(statusResult.status) && statusResult.result != null) {
             AsyncDetectHelper.AsyncDetectResult r = statusResult.result;
             AnalyzeResult analyzeResult = new AnalyzeResult(
-                    r.riskLevel,
+                    r.riskLevel != null ? r.riskLevel : "SAFE",
                     r.score,
                     r.reason,
                     r.source,
-                    r.transcription
+                    r.transcription,
+                    // 服务端不单独返回 AI/暴力概率，使用综合评分近似展示
+                    r.score,
+                    r.score,
+                    0L
             );
             saveDetectionToHistory(recordId, analyzeResult, createdAt);
             dispatchAnalyzeResult(analyzeResult);
@@ -1731,12 +1751,20 @@ public class FloatingOverlayService extends Service {
                 Log.e(TAG, "API response missing data field");
                 return null;
             }
+            String riskLevel = data.optString("riskLevel", "SAFE");
+            double score = data.optDouble("score", 0.0);
+            // 服务端只返回综合评分 score，不单独返回 AI 篡改概率和暴力概率
+            // 此处用综合评分近似展示（UI 仅用于显示参考）
+            double displayProb = score;
             return new AnalyzeResult(
-                    data.optString("riskLevel", "SAFE"),
-                    data.optDouble("score", 0d),
+                    riskLevel,
+                    score,
                     data.isNull("reason") ? null : data.optString("reason", null),
                     data.isNull("source") ? null : data.optString("source", null),
-                    data.isNull("transcription") ? null : data.optString("transcription", null)
+                    data.isNull("transcription") ? null : data.optString("transcription", null),
+                    displayProb,
+                    displayProb,
+                    0L
             );
         } catch (Exception e) {
             Log.e(TAG, "parseAnalyzeResponse failed: " + responseBody, e);
@@ -1771,6 +1799,26 @@ public class FloatingOverlayService extends Service {
 
     private String safeText(String value) {
         return value == null || value.trim().isEmpty() ? "-" : value;
+    }
+
+    private String getRiskChineseLabel(String riskLevel) {
+        if (isHighRisk(riskLevel)) {
+            return getString(R.string.risk_high_chinese);
+        }
+        if (isMediumRisk(riskLevel)) {
+            return getString(R.string.risk_medium_chinese);
+        }
+        return getString(R.string.risk_safe_chinese);
+    }
+
+    private int resolveRiskContainerColor(String riskLevel) {
+        if (isHighRisk(riskLevel)) {
+            return R.color.risk_high_container;
+        }
+        if (isMediumRisk(riskLevel)) {
+            return R.color.risk_mid_container;
+        }
+        return R.color.risk_safe_container;
     }
 
     private String resolveDisplayName(Uri uri) {
